@@ -1,8 +1,7 @@
 
 initialize:
-	out ddrb,r21	;set port B as a output
-	
 	ldi r21, 0xff	;set initial value for ddrb as output
+	out ddrb,r21	;set port B as a output
 
 	;Initialize Z registry for indirect adressing
 	ldi r31, 0x00

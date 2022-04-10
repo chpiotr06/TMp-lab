@@ -4,9 +4,6 @@ initialize:
 	out ddrb,r21	;set port B as output
 	out ddrd,r21	;set port D as output
 
-	;Initialize Z registry for indirect adressing
-	ldi r31, 0x02
-	ldi r30, 0x64
 	;initialize prime number list:
 	.DSEG
 	.org 0x00 ; prime lists starts at program memory adress 0x32 in 16-bit adressing and 0x64 in 8-byte adressing
@@ -34,30 +31,40 @@ initialize:
 	;---------------------------------------------------------------------------
 
 
-
+	ldi r25,0x9			; give thousands digit after 0x in decimal
+	ldi r26,0x9			; give hundreds digit after 0x in decimal
+	ldi r27,0x6			; give tens digit after 0x in decimal
+	ldi r28,0x6			; give unit digit digit after 0x in decimal
 
 main:
-	ldi r30,0x0			; give thousands digit after 0x in decimal
-	lpm r16,Z			; Fetch 7 seg representation in hex
-	sts 0x0000,r16
+	call countingLogic
+	call initializeZReg
+	call SevenSegValues
 
-	ldi r30,0x0			; give hundreds digit after 0x in decimal
-	lpm r17,Z			; Fetch 7 seg representation in hex
-	sts 0x0001,r17
-
-	ldi r30,0x0			; give tens digit after 0x in decimal
-	lpm r18,Z			; Fetch 7 seg representation in hex
-	sts 0x0002,r18
-
-	ldi r30,0x0			; give unit digit digit after 0x in decimal
-	lpm r19,Z			; Fetch 7 seg representation in hex
-	sts 0x0003,r19
 
 	ldi r31, 0x00
 	ldi r30,0x00
 
 	call sevenSegDisp
 	rjmp main
+
+SevenSegValues:
+	mov r30,r25			
+	lpm r16,Z			; Fetch 7 seg representation in hex
+	sts 0x0000,r16
+
+	mov r30,r26			
+	lpm r17,Z			; Fetch 7 seg representation in hex
+	sts 0x0001,r17
+
+	mov r30,r27			
+	lpm r18,Z			; Fetch 7 seg representation in hex
+	sts 0x0002,r18
+
+	mov r30,r28			; give unit digit digit after 0x in decimal
+	lpm r19,Z			; Fetch 7 seg representation in hex
+	sts 0x0003,r19
+	ret
 
 
 sevenSegDisp:
@@ -88,7 +95,6 @@ sevenSegDisp:
 		ldi r17, 0x01
 		ldi r31, 0x00
 		ldi r30, 0x00
-		rjmp sevenSegInterface
 
 	pop r19
 	pop r18
@@ -106,7 +112,7 @@ sleep_10ms:
 	loop1:
 		ldi r16,161	
 		loop2:
-			ldi r17,249					;takes one cycle
+			ldi r17,100					;takes one cycle
 			nop
 			loop3:
 				nop						; takes one cycle
@@ -124,3 +130,53 @@ sleep_10ms:
 	pop r18
 
 	ret
+
+
+initializeZReg:
+	;Initialize Z registry for indirect adressing
+	ldi r31, 0x02
+	ldi r30, 0x64
+	ret
+
+countingLogic:
+	thousands:
+		cpi r25,0x9
+		breq resetThousands
+		hundrets:
+			cpi r26,0x9
+			breq resetHundrets
+			tens:
+				cpi r27,0x9
+				breq resetTens
+				ones:
+					 cpi r28,0x9
+					 breq resetOnes
+					 inc r28
+
+	return:
+	ret
+
+resetThousands:
+	ldi r28,0x0
+	ldi r27,0x0
+	ldi r26,0x0
+	ldi r25,0x0
+	rjmp return
+
+resetHundrets:
+	ldi r27,0x0
+	ldi r28,0x0
+	ldi r26,0x0
+	inc r25
+	rjmp return
+
+resetTens:
+	ldi r28,0x0
+	ldi r27,0x0
+	inc r26
+	rjmp return
+
+resetOnes:
+	ldi r28,0x0
+	inc r27
+	rjmp return

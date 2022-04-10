@@ -3,17 +3,13 @@ initialize:
 	ldi r21, 0xff	;set initial value for ddrb as output
 	out ddrb,r21	;set port B as output
 	out ddrd,r21	;set port D as output
-	
-
-
 
 	;Initialize Z registry for indirect adressing
 	ldi r31, 0x02
 	ldi r30, 0x64
-
 	;initialize prime number list:
 	.DSEG
-	.org 0x32 ; prime lists starts at program memory adress 0x32 in 16-bit adressing and 0x64 in 8-byte adressing
+	.org 0x00 ; prime lists starts at program memory adress 0x32 in 16-bit adressing and 0x64 in 8-byte adressing
 		number: .BYTE 4
 	.CSEG
 	.org 0x100
@@ -41,24 +37,24 @@ initialize:
 
 
 main:
-	ldi r30,0x2
-	lpm r16,Z
-	sts 0x64,r16
+	ldi r30,0x0			; give thousands digit after 0x in decimal
+	lpm r16,Z			; Fetch 7 seg representation in hex
+	sts 0x0000,r16
 
-	ldi r30,0x1
-	lpm r17,Z
-	sts 0x65,r17
+	ldi r30,0x0			; give hundreds digit after 0x in decimal
+	lpm r17,Z			; Fetch 7 seg representation in hex
+	sts 0x0001,r17
 
-	ldi r30,0x3
-	lpm r18,Z
-	sts 0x66,r18
+	ldi r30,0x0			; give tens digit after 0x in decimal
+	lpm r18,Z			; Fetch 7 seg representation in hex
+	sts 0x0002,r18
 
-	ldi r30,0x7
-	lpm r19,Z
-	sts 0x67,r19
+	ldi r30,0x0			; give unit digit digit after 0x in decimal
+	lpm r19,Z			; Fetch 7 seg representation in hex
+	sts 0x0003,r19
 
 	ldi r31, 0x00
-	ldi r30,0x64
+	ldi r30,0x00
 
 	call sevenSegDisp
 	rjmp main
@@ -91,7 +87,7 @@ sevenSegDisp:
 	reset:
 		ldi r17, 0x01
 		ldi r31, 0x00
-		ldi r30, 0x64
+		ldi r30, 0x00
 		rjmp sevenSegInterface
 
 	pop r19

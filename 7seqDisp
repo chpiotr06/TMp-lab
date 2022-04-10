@@ -1,0 +1,130 @@
+
+initialize:
+	ldi r21, 0xff	;set initial value for ddrb as output
+	out ddrb,r21	;set port B as output
+	out ddrd,r21	;set port D as output
+	
+
+
+
+	;Initialize Z registry for indirect adressing
+	ldi r31, 0x02
+	ldi r30, 0x64
+
+	;initialize prime number list:
+	.DSEG
+	.org 0x32 ; prime lists starts at program memory adress 0x32 in 16-bit adressing and 0x64 in 8-byte adressing
+		number: .BYTE 4
+	.CSEG
+	.org 0x100
+		sevenSeg: .DB 0x7e, 0x30, 0x6d, 0x79, 0x33, 0x5b, 0x5f, 0x70, 0x7f, 0x7b
+
+
+	;Initialize stack pointer:
+	ldi r16, high(ramend)
+	out sph,r16
+	ldi r16, low(ramend)
+	out spl,r16
+
+	;------------- Belongs to sleep_10ms subprogram ----------------------------
+	; Define how many tens of ms to sleep:
+	.DSEG
+	msToSleep: .BYTE 1
+	.CSEG
+	ldi r16,1	; second operand is how much ms to sleep. If given 2, subprogram 
+				; will sleep for 10ms. You can calculate how much ms program will slepp
+				; with this formula (x - 1)*10 = msToSleep
+	sts msToSleep,r16
+	;---------------------------------------------------------------------------
+
+
+
+
+main:
+	ldi r30,0x2
+	lpm r16,Z
+	sts 0x64,r16
+
+	ldi r30,0x1
+	lpm r17,Z
+	sts 0x65,r17
+
+	ldi r30,0x3
+	lpm r18,Z
+	sts 0x66,r18
+
+	ldi r30,0x7
+	lpm r19,Z
+	sts 0x67,r19
+
+	ldi r31, 0x00
+	ldi r30,0x64
+
+	call sevenSegDisp
+	rjmp main
+
+
+sevenSegDisp:
+	push r16
+	push r17
+	push r18
+	push r19
+	ldi r18,0b00010000
+	ldi r17,0x01
+	sevenSegInterface:
+		
+		ld r16, Z+			; has single digit 
+		com r16
+		out portd,r16
+		com r17
+		call sleep_10ms
+		ldi r16,0xff
+		out portd,r16
+		out portb, r17
+		com r17
+		lsl r17
+		cp r17,r18
+		
+		breq reset
+		rjmp sevenSegInterface
+	
+	reset:
+		ldi r17, 0x01
+		ldi r31, 0x00
+		ldi r30, 0x64
+		rjmp sevenSegInterface
+
+	pop r19
+	pop r18
+	pop r17
+	pop r16
+	ret
+		
+
+
+sleep_10ms:
+	push r18
+	push r17
+	push r16
+	lds r18, msToSleep					; sleep_10ms, stops for 10ms 
+	loop1:
+		ldi r16,161	
+		loop2:
+			ldi r17,249					;takes one cycle
+			nop
+			loop3:
+				nop						; takes one cycle
+				dec r17					; takes one cycle
+				brne loop3				; if jumps takes 2 cycles if no then one cycle
+		
+			dec r16						;takes one cycle
+			brne loop2					;if jumps takes 2 cycles if no then one cycle
+	
+		dec r18
+		brne loop1
+
+	pop r16
+	pop r17
+	pop r18
+
+	ret
